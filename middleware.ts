@@ -1,3 +1,8 @@
+// MIDDLEWARE COMPLETELY DISABLED FOR BOLT.NEW COMPATIBILITY
+// bolt.new does not support Next.js middleware due to lack of Node.js AsyncLocalStorage
+// To re-enable for production deployment, uncomment all code below
+
+/*
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
@@ -8,7 +13,6 @@ const PUBLIC_PATHS = [
 ];
 
 export function middleware(request: NextRequest) {
-  /*
   const { pathname } = request.nextUrl;
   const token = request.cookies.get('auth_token')?.value;
 
@@ -26,7 +30,7 @@ export function middleware(request: NextRequest) {
   if (!token) {
     return NextResponse.redirect(new URL('/auth/login', request.url));
   }
-  */
+
   // Allow access
   return NextResponse.next();
 }
@@ -36,3 +40,4 @@ export const config = {
     '/((?!_next|static|favicon.ico|api).*)',
   ],
 };
+*/

@@ -41,3 +41,5 @@ export const config = {
   ],
 };
 */
+
+export function middleware(request: NextRequest) {}

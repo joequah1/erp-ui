@@ -1,7 +1,11 @@
+// MIDDLEWARE DISABLED FOR BOLT.NEW COMPATIBILITY
+// bolt.new does not support Next.js middleware due to lack of Node.js AsyncLocalStorage
+// To re-enable for production deployment, uncomment the code below
+
+/*
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-// List of routes that do not require authentication
 const PUBLIC_PATHS = [
   '/auth/login',
   '/auth/register',
@@ -36,3 +40,4 @@ export const config = {
     '/((?!_next|static|favicon.ico|api).*)',
   ],
 };
+*/

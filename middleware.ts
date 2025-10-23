@@ -36,4 +36,3 @@ export const config = {
     '/((?!_next|static|favicon.ico|api).*)',
   ],
 };
-*/

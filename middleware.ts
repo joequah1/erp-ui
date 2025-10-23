@@ -1,4 +1,4 @@
-/*
+
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
@@ -10,6 +10,7 @@ const PUBLIC_PATHS = [
 ];
 
 export function middleware(request: NextRequest) {
+  /*
   const { pathname } = request.nextUrl;
   const token = request.cookies.get('auth_token')?.value;
 
@@ -27,7 +28,7 @@ export function middleware(request: NextRequest) {
   if (!token) {
     return NextResponse.redirect(new URL('/auth/login', request.url));
   }
-
+  */
   // Allow access
   return NextResponse.next();
 }
@@ -37,4 +38,3 @@ export const config = {
     '/((?!_next|static|favicon.ico|api).*)',
   ],
 };
-*/

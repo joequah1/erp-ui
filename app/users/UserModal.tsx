@@ -1,12 +1,12 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { usersApi } from '@/services/api';
-import { User, Role } from '@/types';
-import { Modal } from '@/components/ui/Modal';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Select } from '@/components/ui/Select';
-import { userSchema, type UserFormData } from '@/validation/schemas';
+import { usersApi } from '../../services/api';
+import { User, Role } from '../../types';
+import { Modal } from '../../components/ui/Modal';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
+import { Select } from '../../components/ui/Select';
+import { userSchema, type UserFormData } from '../../validation/schemas';
 
 interface UserModalProps {
   isOpen: boolean;

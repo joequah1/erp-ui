@@ -3,19 +3,18 @@
 import React, { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import {
-  Package,
-  Tag,
-  Box,
-  Settings,
-  ChevronDown,
+import { 
+  Package, 
+  Tag, 
+  Box, 
+  Settings, 
+  ChevronDown, 
   ChevronRight,
   BarChart3,
   Users,
   FileText,
   Home,
-  Store,
-  User
+  Store
 } from 'lucide-react';
 
 interface NavGroup {
@@ -66,7 +65,6 @@ export function Sidebar() {
     {
       label: 'System',
       items: [
-        { path: '/profile', label: 'Profile', icon: User },
         { path: '/users', label: 'Users', icon: Users },
         { path: '/roles', label: 'Roles', icon: Settings },
         { path: '/settings', label: 'Settings', icon: Settings },

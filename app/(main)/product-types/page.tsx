@@ -29,7 +29,8 @@ export default function Page() {
 
   useEffect(() => {
     const filtered = productTypes.filter(productType =>
-      productType.name.toLowerCase().includes(searchTerm.toLowerCase())
+      productType.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (productType.description && productType.description.toLowerCase().includes(searchTerm.toLowerCase()))
     );
     setFilteredProductTypes(filtered);
   }, [productTypes, searchTerm]);
@@ -119,7 +120,7 @@ export default function Page() {
       <div className="flex justify-between items-start">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Product Types Management</h1>
-          <p className="text-gray-600 mt-2">Manage product type classifications for your inventory</p>
+          <p className="text-gray-600 mt-2">Define product types with custom attributes and properties</p>
         </div>
         <div className="flex items-center space-x-3">
           <Button
@@ -131,7 +132,7 @@ export default function Page() {
             <Upload className="h-4 w-4" />
             <span>Import/Export</span>
           </Button>
-          <Button size="sm" onClick={handleCreate} className="flex items-center space-x-2">
+          <Button onClick={handleCreate} className="flex items-center space-x-2">
             <Plus className="h-4 w-4" />
             <span>Add Product Type</span>
           </Button>
@@ -179,6 +180,8 @@ export default function Page() {
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="text-left py-4 px-6 font-medium text-gray-900">Name</th>
+                  <th className="text-left py-4 px-6 font-medium text-gray-900">Description</th>
+                  <th className="text-left py-4 px-6 font-medium text-gray-900">Attributes</th>
                   <th className="text-left py-4 px-6 font-medium text-gray-900">Created</th>
                   <th className="text-center py-4 px-6 font-medium text-gray-900">Actions</th>
                 </tr>
@@ -196,6 +199,29 @@ export default function Page() {
                         <div>
                           <p className="font-medium text-gray-900">{productType.name}</p>
                         </div>
+                      </div>
+                    </td>
+                    <td className="py-4 px-6 text-gray-600 max-w-xs truncate">
+                      {productType.description || 'No description'}
+                    </td>
+                    <td className="py-4 px-6">
+                      <div className="flex flex-wrap gap-1">
+                        {Object.keys(productType.attributes).slice(0, 3).map(key => (
+                          <span
+                            key={key}
+                            className="inline-flex px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full"
+                          >
+                            {key}
+                          </span>
+                        ))}
+                        {Object.keys(productType.attributes).length > 3 && (
+                          <span className="inline-flex px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full">
+                            +{Object.keys(productType.attributes).length - 3} more
+                          </span>
+                        )}
+                        {Object.keys(productType.attributes).length === 0 && (
+                          <span className="text-sm text-gray-400">No attributes</span>
+                        )}
                       </div>
                     </td>
                     <td className="py-4 px-6 text-gray-500 text-sm">

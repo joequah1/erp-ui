@@ -1,11 +1,13 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Upload, Download, FileText, CheckCircle, AlertCircle, Clock } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { jobsApi } from '@/services/api';
-import { JobMonitor } from '@/types';
+import { Button } from '../../../components/ui/Button';
+import { Input } from '../../../components/ui/Input';
+import { Select } from '../../../components/ui/Select';
+import { Card } from '../../../components/ui/Card';
+import { LoadingSpinner } from '../../../components/ui/LoadingSpinner';
+import { jobsApi } from '../../../services/api';
+import { JobMonitor } from '../../../types';
 import { useRouter } from 'next/navigation';
 
 const TEMPLATES = [

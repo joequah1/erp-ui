@@ -129,7 +129,7 @@ export default function Page() {
           <p className="text-gray-600 mt-2">Manage user roles and their permissions</p>
         </div>
         <div className="flex items-center space-x-3">
-          <Button size="sm" onClick={handleCreate} className="flex items-center space-x-2">
+          <Button onClick={handleCreate} className="flex items-center space-x-2">
             <Plus className="h-4 w-4" />
             <span>Add Role</span>
           </Button>

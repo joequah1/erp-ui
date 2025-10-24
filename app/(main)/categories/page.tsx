@@ -31,10 +31,11 @@ export default function CategoriesPage() {
   useEffect(() => {
     if (searchTerm) {
       const filtered = flattenCategories(categories).filter(category =>
-        category.name.toLowerCase().includes(searchTerm.toLowerCase())
+        category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (category.description && category.description.toLowerCase().includes(searchTerm.toLowerCase()))
       );
       setFilteredCategories(filtered);
-    } else{
+    } else {
       setFilteredCategories(categories);
     }
   }, [categories, searchTerm]);
@@ -156,24 +157,25 @@ export default function CategoriesPage() {
       .filter(cat => (cat.parentId || null) === parentId)
       .map(cat => (
         <React.Fragment key={cat.id}>
-          <tr className="hover:bg-gray-50 transition-colors">
-            <td className="px-6 py-4">
+          <tr className="border-b hover:bg-gray-50">
+            <td className="px-3 py-2">
               <div className="flex items-center" style={{ paddingLeft: `${level * 1.5}rem` }}>
                 {cats.some(c => c.parentId === cat.id) && (
                   <button
                     type="button"
-                    className="mr-2 text-gray-400 hover:text-gray-700"
+                    className="mr-1 text-gray-400 hover:text-gray-700"
                     onClick={() => toggleExpanded(cat.id)}
                   >
                     {expandedCategories.has(cat.id) ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                   </button>
                 )}
-                <span className="font-medium text-gray-900">{cat.name}</span>
+                <span className="font-semibold">{cat.name}</span>
               </div>
             </td>
-            <td className="px-6 py-4 text-gray-500 text-sm">{formatDate(cat.createdAt)}</td>
-            <td className="px-6 py-4">
-              <div className="flex gap-2 items-center">
+            <td className="px-3 py-2">{cat.description}</td>
+            <td className="px-3 py-2">{formatDate(cat.createdAt)}</td>
+            <td className="px-3 py-2">
+              <div className="flex gap-1">
                 <Button size="sm" variant="outline" onClick={() => handleCreate(cat.id)}>
                   <Plus className="w-4 h-4 mr-1" /> Subcategory
                 </Button>
@@ -198,75 +200,48 @@ export default function CategoriesPage() {
           <h1 className="text-3xl font-bold text-gray-900">Categories Management</h1>
           <p className="text-gray-600 mt-2">Manage product categories and their hierarchy</p>
         </div>
-        <div className="flex items-center space-x-3">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsImportExportOpen(true)}
-            className="flex items-center space-x-2"
-          >
-            <Upload className="h-4 w-4" />
-            <span>Import/Export</span>
+        <div className="flex gap-2">
+          <Button onClick={() => handleCreate()} size="sm">
+            <Plus className="w-4 h-4 mr-1" /> New Category
           </Button>
-          <Button
-            size="sm"
-            onClick={() => handleCreate()}
-            className="flex items-center space-x-2"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Add Category</span>
+          <Button onClick={() => setIsImportExportOpen(true)} variant="outline" size="sm">
+            <Upload className="w-4 h-4 mr-1" /> Import/Export
           </Button>
         </div>
       </div>
-
-      {/* Search */}
-      <Card>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <Input
-            placeholder="Search categories..."
-            className="pl-10"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-      </Card>
-      <Card padding="none">
+      <div className="flex flex-wrap gap-2 items-center">
+        <Input
+          className="w-64"
+          placeholder="Search categories..."
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
+        />
+      </div>
+      <Card className="overflow-x-auto">
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
+          <div className="flex justify-center py-12">
             <LoadingSpinner size="lg" />
           </div>
-        ) : filteredCategories.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="text-gray-400 text-6xl mb-4">📁</div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {searchTerm ? 'No categories found' : 'No categories yet'}
-            </h3>
-            <p className="text-gray-600 mb-4">
-              {searchTerm
-                ? 'Try adjusting your search terms'
-                : 'Get started by adding your first category.'
-              }
-            </p>
-            {!searchTerm && (
-              <Button onClick={() => handleCreate()}>Add First Category</Button>
-            )}
-          </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+          <table className="min-w-full text-sm">
+            <thead>
+              <tr className="border-b">
+                <th className="px-3 py-2 text-left">Name</th>
+                <th className="px-3 py-2 text-left">Description</th>
+                <th className="px-3 py-2 text-left">Created</th>
+                <th className="px-3 py-2 text-left">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredCategories.length === 0 ? (
                 <tr>
-                  <th className="px-6 py-4 text-left font-medium text-gray-900">Name</th>
-                  <th className="px-6 py-4 text-left font-medium text-gray-900">Created</th>
-                  <th className="px-6 py-4 text-left font-medium text-gray-900">Actions</th>
+                  <td colSpan={4} className="text-center py-8 text-gray-500">No categories found.</td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {renderCategoryRows(flattenCategories(filteredCategories))}
-              </tbody>
-            </table>
-          </div>
+              ) : (
+                renderCategoryRows(flattenCategories(filteredCategories))
+              )}
+            </tbody>
+          </table>
         )}
       </Card>
       <CategoryModal

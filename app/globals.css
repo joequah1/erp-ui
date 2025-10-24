@@ -2,17 +2,3 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    --font-geist-sans: 'Geist', system-ui, sans-serif;
-    --font-geist-mono: 'Geist Mono', monospace;
-  }
-  
-  body {
-    font-family: var(--font-geist-sans);
-  }
-  
-  code, pre {
-    font-family: var(--font-geist-mono);
-  }
-}

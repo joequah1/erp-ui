@@ -1,13 +1,11 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { Bell, ChevronDown, Search, Store, Settings, LogOut, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '../ui/Button';
 
 export function Header() {
-  const router = useRouter();
   const { user, currentShop, userShops, switchShop, logout } = useAuth();
 
   const [showShopSelector, setShowShopSelector] = useState(false);
@@ -176,23 +174,11 @@ export function Header() {
                 <p className="text-xs text-gray-500">{user?.email}</p>
               </div>
               <div className="py-1">
-                <button
-                  onClick={() => {
-                    router.push('/profile');
-                    setShowUserMenu(false);
-                  }}
-                  className="w-full flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                >
+                <button className="w-full flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                   <User className="h-4 w-4" />
                   <span>Profile Settings</span>
                 </button>
-                <button
-                  onClick={() => {
-                    router.push('/profile');
-                    setShowUserMenu(false);
-                  }}
-                  className="w-full flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                >
+                <button className="w-full flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                   <Settings className="h-4 w-4" />
                   <span>Account Settings</span>
                 </button>

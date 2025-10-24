@@ -1,15 +1,15 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Upload, Shield, Crown, User as UserIcon } from 'lucide-react';
-import { User, Role } from '@/types';
-import { usersApi, rolesApi, jobsApi } from '@/services/api';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Card } from '@/components/ui/Card';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { ActionMenu } from '@/components/ui/ActionMenu';
+import { User, Role } from '../../types';
+import { usersApi, rolesApi, jobsApi } from '../../services/api';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
+import { Card } from '../../components/ui/Card';
+import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+import { ActionMenu } from '../../components/ui/ActionMenu';
 import { UserModal } from './UserModal';
-import { ImportExportModal } from '@/components/ImportExportModal';
+import { ImportExportModal } from '../../components/ImportExportModal';
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -166,7 +166,7 @@ export default function UsersPage() {
             <Upload className="h-4 w-4" />
             <span>Import/Export</span>
           </Button>
-          <Button size="sm" onClick={handleCreate} className="flex items-center space-x-2" type="button">
+          <Button onClick={handleCreate} className="flex items-center space-x-2" type="button">
             <Plus className="h-4 w-4" />
             <span>Add User</span>
           </Button>

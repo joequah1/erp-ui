@@ -1,16 +1,16 @@
 
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
-import { Upload, Plus } from 'lucide-react';
+import { Upload, Plus, Search, Filter } from 'lucide-react';
 import { InventoryItem, PaginatedResponse, FilterOptions, Brand, Category, ProductType } from '@/types';
 import { inventoryApi, brandsApi, categoriesApi, productTypesApi } from '@/services/api';
 import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Card } from '@/components/ui/Card';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ActionMenu } from '@/components/ui/ActionMenu';
 import { useRouter } from 'next/navigation';
-import { SearchFilterBar } from '@/components/SearchFilterBar';
 
 export default function Page() {
   const router = useRouter();
@@ -76,6 +76,15 @@ export default function Page() {
       [key]: value,
       page: key !== 'page' ? 1 : value // Reset to first page unless changing page
     }));
+  };
+
+  // Improved debounce for search
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    searchTimeout.current = setTimeout(() => {
+      handleFilterChange('search', value || undefined);
+    }, 300);
   };
 
   const flattenCategories = (categories: Category[]): Category[] => {
@@ -151,62 +160,74 @@ export default function Page() {
             <Upload className="h-4 w-4" />
             <span>Import/Export</span>
           </Button>
-          <Button size="sm" onClick={() => router.push('/inventory/create')} className="flex items-center space-x-2">
+          <Button onClick={() => router.push('/inventory/create')} className="flex items-center space-x-2">
             <Plus className="h-4 w-4" />
             <span>Add Item</span>
           </Button>
         </div>
       </div>
       {/* Filters */}
-      <SearchFilterBar
-        searchPlaceholder="Search by SKU or warehouse..."
-        onSearchChange={(value) => {
-          if (searchTimeout.current) clearTimeout(searchTimeout.current);
-          searchTimeout.current = setTimeout(() => {
-            handleFilterChange('search', value || undefined);
-          }, 300);
-        }}
-        showFilters={showFilters}
-        onToggleFilters={() => setShowFilters(!showFilters)}
-        hasFilters={true}
-        filterContent={
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Select
-              label="Brand"
-              value={filters.brandId || ''}
-              onChange={(e) => handleFilterChange('brandId', e.target.value || undefined)}
-              options={brands.map(brand => ({ value: brand.id, label: brand.name }))}
-              placeholder="All brands"
-            />
-            <Select
-              label="Category"
-              value={filters.categoryId || ''}
-              onChange={(e) => handleFilterChange('categoryId', e.target.value || undefined)}
-              options={flattenCategories(categories).map(cat => ({ value: cat.id, label: cat.name }))}
-              placeholder="All categories"
-            />
-            <Select
-              label="Product Type"
-              value={filters.productTypeId || ''}
-              onChange={(e) => handleFilterChange('productTypeId', e.target.value || undefined)}
-              options={productTypes.map(pt => ({ value: pt.id, label: pt.name }))}
-              placeholder="All types"
-            />
-            <Select
-              label="Sort By"
-              value={filters.sortBy || ''}
-              onChange={(e) => handleFilterChange('sortBy', e.target.value || undefined)}
-              options={[
-                { value: 'createdAt', label: 'Date Created' },
-                { value: 'sku', label: 'SKU' },
-                { value: 'quantity', label: 'Quantity' },
-                { value: 'cost', label: 'Cost' },
-                { value: 'retailPrice', label: 'Retail Price' }
-              ]}
-            />
+      <Card>
+        <div className="space-y-4">
+          {/* Search and Filter Toggle */}
+          <div className="flex items-center space-x-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Search by SKU or warehouse..."
+                className="pl-10"
+                onChange={handleSearch}
+              />
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center space-x-2"
+            >
+              <Filter className="h-4 w-4" />
+              <span>Filters</span>
+            </Button>
           </div>
-        }
-      />
+          {/* Advanced Filters */}
+          {showFilters && (
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t border-gray-200">
+              <Select
+                label="Brand"
+                value={filters.brandId || ''}
+                onChange={(e) => handleFilterChange('brandId', e.target.value || undefined)}
+                options={brands.map(brand => ({ value: brand.id, label: brand.name }))}
+                placeholder="All brands"
+              />
+              <Select
+                label="Category"
+                value={filters.categoryId || ''}
+                onChange={(e) => handleFilterChange('categoryId', e.target.value || undefined)}
+                options={flattenCategories(categories).map(cat => ({ value: cat.id, label: cat.name }))}
+                placeholder="All categories"
+              />
+              <Select
+                label="Product Type"
+                value={filters.productTypeId || ''}
+                onChange={(e) => handleFilterChange('productTypeId', e.target.value || undefined)}
+                options={productTypes.map(pt => ({ value: pt.id, label: pt.name }))}
+                placeholder="All types"
+              />
+              <Select
+                label="Sort By"
+                value={filters.sortBy || ''}
+                onChange={(e) => handleFilterChange('sortBy', e.target.value || undefined)}
+                options={[
+                  { value: 'createdAt', label: 'Date Created' },
+                  { value: 'sku', label: 'SKU' },
+                  { value: 'quantity', label: 'Quantity' },
+                  { value: 'cost', label: 'Cost' },
+                  { value: 'retailPrice', label: 'Retail Price' }
+                ]}
+              />
+            </div>
+          )}
+        </div>
+      </Card>
       {/* Inventory Table */}
       <Card padding="none">
         {isLoading ? (
@@ -216,19 +237,9 @@ export default function Page() {
         ) : inventory.data.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-gray-400 text-6xl mb-4">📦</div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {filters.search || filters.brandId || filters.categoryId || filters.productTypeId
-                ? 'No inventory items found'
-                : 'No inventory items yet'}
-            </h3>
-            <p className="text-gray-600 mb-4">
-              {filters.search || filters.brandId || filters.categoryId || filters.productTypeId
-                ? 'Try adjusting your search terms or filters'
-                : 'Get started by adding your first inventory item.'}
-            </p>
-            {!filters.search && !filters.brandId && !filters.categoryId && !filters.productTypeId && (
-              <Button onClick={() => router.push('/inventory/create')}>Add First Item</Button>
-            )}
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No inventory items found</h3>
+            <p className="text-gray-600 mb-4">Get started by adding your first inventory item.</p>
+            <Button onClick={() => router.push('/inventory/create')}>Add First Item</Button>
           </div>
         ) : (
           <>
@@ -237,13 +248,12 @@ export default function Page() {
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
                     <th className="text-left py-4 px-6 font-medium text-gray-900">SKU</th>
-                    <th className="text-left py-4 px-6 font-medium text-gray-900">Name</th>
                     <th className="text-left py-4 px-6 font-medium text-gray-900">Brand</th>
                     <th className="text-left py-4 px-6 font-medium text-gray-900">Category</th>
-                    <th className="text-right py-4 px-6 font-medium text-gray-900">Stock</th>
-                    <th className="text-right py-4 px-6 font-medium text-gray-900">Cost Price</th>
-                    <th className="text-right py-4 px-6 font-medium text-gray-900">Selling Price</th>
-                    <th className="text-center py-4 px-6 font-medium text-gray-900">Status</th>
+                    <th className="text-right py-4 px-6 font-medium text-gray-900">Quantity</th>
+                    <th className="text-right py-4 px-6 font-medium text-gray-900">Cost</th>
+                    <th className="text-right py-4 px-6 font-medium text-gray-900">Retail Price</th>
+                    <th className="text-left py-4 px-6 font-medium text-gray-900">Warehouse</th>
                     <th className="text-center py-4 px-6 font-medium text-gray-900">Actions</th>
                   </tr>
                 </thead>
@@ -255,38 +265,22 @@ export default function Page() {
                           {item.sku}
                         </span>
                       </td>
-                      <td className="py-4 px-6">
-                        <div>
-                          <p className="font-medium text-gray-900">{item.name}</p>
-                          {item.shortName && <p className="text-sm text-gray-500">{item.shortName}</p>}
-                        </div>
-                      </td>
-                      <td className="py-4 px-6 text-gray-900">{item.brand?.name || '-'}</td>
-                      <td className="py-4 px-6 text-gray-900">{item.category?.name || '-'}</td>
+                      <td className="py-4 px-6 text-gray-900">{item.brand?.name || 'N/A'}</td>
+                      <td className="py-4 px-6 text-gray-900">{item.category?.name || 'N/A'}</td>
                       <td className="py-4 px-6 text-right">
                         <span className={`font-medium ${
-                          item.stock === 0
-                            ? 'text-red-600'
-                            : item.stock < 10
-                            ? 'text-orange-600'
+                          item.quantity === 0 
+                            ? 'text-red-600' 
+                            : item.quantity < 10 
+                            ? 'text-orange-600' 
                             : 'text-green-600'
                         }`}>
-                          {item.stock}
+                          {item.quantity}
                         </span>
                       </td>
-                      <td className="py-4 px-6 text-right font-medium">
-                        {item.costPrice ? `${item.currency} ${item.costPrice.toFixed(2)}` : '-'}
-                      </td>
-                      <td className="py-4 px-6 text-right font-medium">
-                        {item.currency} {(+item.sellingPrice)?.toFixed(2) ?? '-'}
-                      </td>
-                      <td className="py-4 px-6 text-center">
-                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                          item.status === 1 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {item.status === 1 ? 'Active' : 'Inactive'}
-                        </span>
-                      </td>
+                      <td className="py-4 px-6 text-right font-medium">{formatCurrency(item.cost)}</td>
+                      <td className="py-4 px-6 text-right font-medium">{formatCurrency(item.retailPrice)}</td>
+                      <td className="py-4 px-6 text-gray-900">{item.warehouse}</td>
                       <td className="py-4 px-6 text-center">
                         <ActionMenu
                           onView={() => handleView(item.id)}

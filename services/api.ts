@@ -20,23 +20,6 @@ import {
   BatchItem
 } from '../types';
 
-// Real API imports - import directly from modular structure to avoid circular dependency
-import {
-  realAuthApi,
-  realBrandsApi,
-  realCategoriesApi,
-  realProductTypesApi,
-  realInventoryApi,
-  realShopsApi,
-  realBatchItemsApi,
-  setTokens as realSetTokens,
-  setShopId as realSetShopId,
-  clearTokens as realClearTokens,
-} from './realApi';
-
-// Check if we should use the real API
-const USE_REAL_API = process.env.NEXT_PUBLIC_USE_MOCK_API !== 'true';
-
 // This will be easily changeable to your Laravel API URL
 const API_BASE_URL = 'http://localhost:8000/api';
 
@@ -53,9 +36,9 @@ const mockUsers: User[] = [
 ];
 
 const mockBrands: Brand[] = [
-  { id: '1', name: 'Apple', visible: 1, flag: 0, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
-  { id: '2', name: 'Samsung', visible: 1, flag: 0, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
-  { id: '3', name: 'Nike', visible: 1, flag: 0, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
+  { id: '1', name: 'Apple', description: 'Technology brand', createdAt: '2024-01-01', updatedAt: '2024-01-01' },
+  { id: '2', name: 'Samsung', description: 'Electronics manufacturer', createdAt: '2024-01-01', updatedAt: '2024-01-01' },
+  { id: '3', name: 'Nike', description: 'Sportswear brand', createdAt: '2024-01-01', updatedAt: '2024-01-01' },
 ];
 
 const mockCategories: Category[] = [
@@ -67,17 +50,21 @@ const mockCategories: Category[] = [
 ];
 
 const mockProductTypes: ProductType[] = [
-  {
-    id: '1',
-    name: 'Physical Product',
-    createdAt: '2024-01-01',
-    updatedAt: '2024-01-01'
+  { 
+    id: '1', 
+    name: 'Physical Product', 
+    description: 'Tangible items that require shipping',
+    attributes: { requiresShipping: true, trackable: true },
+    createdAt: '2024-01-01', 
+    updatedAt: '2024-01-01' 
   },
-  {
-    id: '2',
-    name: 'Digital Product',
-    createdAt: '2024-01-01',
-    updatedAt: '2024-01-01'
+  { 
+    id: '2', 
+    name: 'Digital Product', 
+    description: 'Digital downloads or services',
+    attributes: { requiresShipping: false, downloadable: true },
+    createdAt: '2024-01-01', 
+    updatedAt: '2024-01-01' 
   },
 ];
 
@@ -85,62 +72,38 @@ const mockInventoryItems: InventoryItem[] = [
   {
     id: '1',
     sku: 'APL-IPH15-BLK',
-    name: 'iPhone 15 Black',
-    shortName: 'IP15-BLK',
-    description: 'Latest iPhone model in black color',
-    barcode: '1234567890123',
-    stock: 150,
-    currency: 'USD',
-    sellingPrice: 999,
-    costPrice: 800,
-    mainImage: '',
+    quantity: 150,
+    cost: 800,
+    retailPrice: 999,
+    orientalPrice: 920,
     brandId: '1',
     categoryId: '2',
     productTypeId: '1',
-    status: 1,
-    courierType: 'Van',
-    assembly: false,
-  packagingDetail: 'Standard retail packaging',
+    warehouse: 'Main Warehouse',
     weight: 0.2,
-    length: 15,
-    width: 7.5,
-    height: 1,
-    features: {
-      'Warranty': '2 years',
-      'Color': 'Black',
-      'Storage': '256GB'
-    },
+    dimensions: { length: 15, width: 7, height: 1 },
+    courier: 'DHL',
+    assembly: false,
+    dynamicFeatures: { color: 'Black', storage: '128GB' },
     createdAt: '2024-01-01',
     updatedAt: '2024-01-01',
   },
   {
     id: '2',
     sku: 'SAM-GAL24-WHT',
-    name: 'Samsung Galaxy S24 White',
-    shortName: 'GAL24-WHT',
-    description: 'Latest Samsung flagship phone in white',
-    barcode: '9876543210987',
-    stock: 75,
-    currency: 'USD',
-    sellingPrice: 899,
-    costPrice: 700,
-    mainImage: '',
+    quantity: 75,
+    cost: 700,
+    retailPrice: 899,
+    orientalPrice: 850,
     brandId: '2',
     categoryId: '2',
     productTypeId: '1',
-    status: 1,
-    courierType: 'Van',
-    assembly: false,
-  packagingDetail: 'Original Samsung packaging',
+    warehouse: 'Secondary Warehouse',
     weight: 0.19,
-    length: 14.5,
-    width: 7,
-    height: 0.9,
-    features: {
-      'Warranty': '1 year',
-      'Color': 'White',
-      'Storage': '128GB'
-    },
+    dimensions: { length: 14, width: 6.8, height: 0.8 },
+    courier: 'FedEx',
+    assembly: false,
+    dynamicFeatures: { color: 'White', storage: '256GB' },
     createdAt: '2024-01-01',
     updatedAt: '2024-01-01',
   },
@@ -285,8 +248,8 @@ const mockBatchItems: BatchItem[] = [
 // Simulate API delay
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-// Auth API (Mock)
-const mockAuthApi = {
+// Auth API
+export const authApi = {
   async login(credentials: LoginCredentials): Promise<{ user: User; token: string }> {
     await delay(800);
     
@@ -343,8 +306,8 @@ const mockAuthApi = {
   }
 };
 
-// Brands API (Mock)
-const mockBrandsApi = {
+// Brands API
+export const brandsApi = {
   async getAll(): Promise<Brand[]> {
     await delay(300);
     return [...mockBrands];
@@ -390,8 +353,8 @@ const mockBrandsApi = {
   }
 };
 
-// Categories API (Mock)
-const mockCategoriesApi = {
+// Categories API
+export const categoriesApi = {
   async getAll(): Promise<Category[]> {
     await delay(300);
     return buildCategoryTree([...mockCategories]);
@@ -437,8 +400,8 @@ const mockCategoriesApi = {
   }
 };
 
-// Product Types API (Mock)
-const mockProductTypesApi = {
+// Product Types API
+export const productTypesApi = {
   async getAll(): Promise<ProductType[]> {
     await delay(300);
     return [...mockProductTypes];
@@ -484,8 +447,8 @@ const mockProductTypesApi = {
   }
 };
 
-// Inventory API (Mock)
-const mockInventoryApi = {
+// Inventory API
+export const inventoryApi = {
   async getAll(filters: FilterOptions = {}): Promise<PaginatedResponse<InventoryItem>> {
     await delay(500);
     
@@ -494,25 +457,30 @@ const mockInventoryApi = {
     // Apply search filter
     if (filters.search) {
       const search = filters.search.toLowerCase();
-      filteredItems = filteredItems.filter(item =>
+      filteredItems = filteredItems.filter(item => 
         item.sku.toLowerCase().includes(search) ||
-        item.name.toLowerCase().includes(search)
+        item.warehouse.toLowerCase().includes(search)
       );
     }
-
+    
     // Apply brand filter
     if (filters.brandId) {
       filteredItems = filteredItems.filter(item => item.brandId === filters.brandId);
     }
-
+    
     // Apply category filter
     if (filters.categoryId) {
       filteredItems = filteredItems.filter(item => item.categoryId === filters.categoryId);
     }
-
+    
     // Apply product type filter
     if (filters.productTypeId) {
       filteredItems = filteredItems.filter(item => item.productTypeId === filters.productTypeId);
+    }
+    
+    // Apply warehouse filter
+    if (filters.warehouse) {
+      filteredItems = filteredItems.filter(item => item.warehouse === filters.warehouse);
     }
     
     // Apply sorting
@@ -910,8 +878,8 @@ export const batchesApi = {
   }
 };
 
-// Batch Items API (Mock)
-const mockBatchItemsApi = {
+// Batch Items API
+export const batchItemsApi = {
   async getByBatchId(batchId: string): Promise<BatchItem[]> {
     await delay(300);
     return mockBatchItems.filter(item => item.batchId === batchId).map(item => ({
@@ -920,29 +888,13 @@ const mockBatchItemsApi = {
     }));
   },
 
-  async getByInventoryItemId(inventoryItemId: string): Promise<Array<Batch & { batchItem: BatchItem }>> {
-    await delay(300);
-    // Find all batch items for this inventory item
-    const items = mockBatchItems.filter(item => item.inventoryItemId === inventoryItemId);
-
-    // Get the batches and combine with batch item data
-    return items.map(item => {
-      const batch = mockBatches.find(b => b.id === item.batchId);
-      if (!batch) return null;
-      return {
-        ...batch,
-        batchItem: item
-      };
-    }).filter((b): b is Batch & { batchItem: BatchItem } => b !== null);
-  },
-
   async create(data: Omit<BatchItem, 'id' | 'createdAt' | 'updatedAt' | 'sgdCost'>): Promise<BatchItem> {
     await delay(500);
-
+    
     // Calculate SGD cost
     const currency = mockCurrencies.find(c => c.code === data.currency);
     const sgdCost = currency ? data.cost / currency.rate : data.cost;
-
+    
     const item: BatchItem = {
       ...data,
       id: Date.now().toString(),
@@ -951,7 +903,7 @@ const mockBatchItemsApi = {
       updatedAt: new Date().toISOString()
     };
     mockBatchItems.push(item);
-
+    
     // Update batch totals
     const batch = mockBatches.find(b => b.id === data.batchId);
     if (batch) {
@@ -959,7 +911,7 @@ const mockBatchItemsApi = {
       batch.totalValue = batchItems.reduce((sum, bi) => sum + (bi.sgdCost * bi.quantity), 0);
       batch.itemsCount = batchItems.reduce((sum, bi) => sum + bi.quantity, 0);
     }
-
+    
     return item;
   },
 
@@ -967,20 +919,20 @@ const mockBatchItemsApi = {
     await delay(500);
     const index = mockBatchItems.findIndex(item => item.id === id);
     if (index === -1) throw new Error('Batch item not found');
-
+    
     const updatedData = { ...mockBatchItems[index], ...data };
-
+    
     // Recalculate SGD cost if currency or cost changed
     if (data.currency || data.cost) {
       const currency = mockCurrencies.find(c => c.code === updatedData.currency);
       updatedData.sgdCost = currency ? updatedData.cost / currency.rate : updatedData.cost;
     }
-
+    
     mockBatchItems[index] = {
       ...updatedData,
       updatedAt: new Date().toISOString()
     };
-
+    
     // Update batch totals
     const batch = mockBatches.find(b => b.id === mockBatchItems[index].batchId);
     if (batch) {
@@ -988,7 +940,7 @@ const mockBatchItemsApi = {
       batch.totalValue = batchItems.reduce((sum, bi) => sum + (bi.sgdCost * bi.quantity), 0);
       batch.itemsCount = batchItems.reduce((sum, bi) => sum + bi.quantity, 0);
     }
-
+    
     return mockBatchItems[index];
   },
 
@@ -996,10 +948,10 @@ const mockBatchItemsApi = {
     await delay(300);
     const index = mockBatchItems.findIndex(item => item.id === id);
     if (index === -1) throw new Error('Batch item not found');
-
+    
     const batchId = mockBatchItems[index].batchId;
     mockBatchItems.splice(index, 1);
-
+    
     // Update batch totals
     const batch = mockBatches.find(b => b.id === batchId);
     if (batch) {
@@ -1011,23 +963,9 @@ const mockBatchItemsApi = {
 };
 
 // Currencies API
-const mockCurrenciesApi = {
+export const currenciesApi = {
   async getAll(): Promise<Currency[]> {
     await delay(200);
     return [...mockCurrencies];
   }
 };
-
-// Export wrappers that toggle between mock and real API
-export const authApi = USE_REAL_API ? realAuthApi : mockAuthApi;
-export const brandsApi = USE_REAL_API ? realBrandsApi : mockBrandsApi;
-export const categoriesApi = USE_REAL_API ? realCategoriesApi : mockCategoriesApi;
-export const productTypesApi = USE_REAL_API ? realProductTypesApi : mockProductTypesApi;
-export const inventoryApi = USE_REAL_API ? realInventoryApi : mockInventoryApi;
-export const batchItemsApi = USE_REAL_API ? realBatchItemsApi : mockBatchItemsApi;
-export const currenciesApi = mockCurrenciesApi; // No real API for this yet
-
-// Helper functions for real API token management
-export const setTokens = USE_REAL_API ? realSetTokens : () => {};
-export const setShopId = USE_REAL_API ? realSetShopId : () => {};
-export const clearTokens = USE_REAL_API ? realClearTokens : () => {};

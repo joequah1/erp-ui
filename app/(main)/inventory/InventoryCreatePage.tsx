@@ -1,15 +1,14 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Save, Plus, X, Trash2 } from 'lucide-react';
-import { inventoryApi, brandsApi, categoriesApi, productTypesApi } from '@/services/api';
-import { Brand, Category, ProductType } from '@/types';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { SearchableSelect } from '@/components/ui/SearchableSelect';
-import { Toggle } from '@/components/ui/Toggle';
-import { Card } from '@/components/ui/Card';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { inventoryItemSchema, type InventoryItemFormData } from '@/validation/schemas';
+import { ArrowLeft, Save } from 'lucide-react';
+import { inventoryApi, brandsApi, categoriesApi, productTypesApi } from '../../../services/api';
+import { Brand, Category, ProductType } from '../../../types';
+import { Button } from '../../../components/ui/Button';
+import { Input } from '../../../components/ui/Input';
+import { Select } from '../../../components/ui/Select';
+import { Card } from '../../../components/ui/Card';
+import { LoadingSpinner } from '../../../components/ui/LoadingSpinner';
+import { inventoryItemSchema, type InventoryItemFormData } from '../../../validation/schemas';
 import { useRouter } from 'next/navigation';
 
 export default function InventoryCreatePage() {
@@ -19,38 +18,28 @@ export default function InventoryCreatePage() {
   const [productTypes, setProductTypes] = useState<ProductType[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingOptions, setIsLoadingOptions] = useState(true);
-  const [formData, setFormData] = useState<InventoryItemFormData>({
+  const [formData, setFormData] = useState<InventoryItemFormData & { 
+    dimensionsEnabled: boolean;
+    dynamicFeaturesJson: string;
+  }>({
     sku: '',
-    name: '',
-    shortName: '',
-    description: '',
-    barcode: '',
-    stock: 0,
-    currency: 'USD',
-    sellingPrice: 0,
-    costPrice: 0,
-    mainImage: '',
+    quantity: 0,
+    cost: 0,
+    retailPrice: 0,
+    orientalPrice: 0,
     brandId: '',
     categoryId: '',
     productTypeId: '',
-    status: 1,
-    courierType: undefined,
-    assembly: false,
-    packagingDetail: '',
-  packagingType: '',
-    parcelWeight: undefined,
-    parcelLength: undefined,
-    parcelWidth: undefined,
-    parcelHeight: undefined,
+    warehouse: '',
     weight: undefined,
-    length: undefined,
-    width: undefined,
-    height: undefined,
-    features: {}
+    dimensions: undefined,
+    courier: '',
+    assembly: false,
+    dynamicFeatures: {},
+    dimensionsEnabled: false,
+    dynamicFeaturesJson: '{}'
   });
   const [errors, setErrors] = useState<Partial<InventoryItemFormData>>({});
-  const [featureKey, setFeatureKey] = useState('');
-  const [featureValue, setFeatureValue] = useState('');
 
   useEffect(() => {
     loadOptions();
@@ -73,7 +62,7 @@ export default function InventoryCreatePage() {
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     let parsedValue: any = value;
     if (type === 'number') {
@@ -87,9 +76,37 @@ export default function InventoryCreatePage() {
     }
   };
 
+  const handleDimensionChange = (field: 'length' | 'width' | 'height', value: string) => {
+    const numValue = value === '' ? 0 : Number(value);
+    setFormData(prev => ({
+      ...prev,
+      dimensions: {
+        length: prev.dimensions?.length || 0,
+        width: prev.dimensions?.width || 0,
+        height: prev.dimensions?.height || 0,
+        [field]: numValue
+      }
+    }));
+  };
+
+  const handleDynamicFeaturesChange = (value: string) => {
+    setFormData(prev => ({ ...prev, dynamicFeaturesJson: value }));
+    try {
+      const parsed = JSON.parse(value);
+      setFormData(prev => ({ ...prev, dynamicFeatures: parsed }));
+    } catch {
+      // Invalid JSON, keep the string for editing
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const result = inventoryItemSchema.safeParse(formData);
+    const dataToValidate = {
+      ...formData,
+      dimensions: formData.dimensionsEnabled ? formData.dimensions : undefined,
+      weight: formData.weight || undefined
+    };
+    const result = inventoryItemSchema.safeParse(dataToValidate);
     if (!result.success) {
       const fieldErrors: Partial<InventoryItemFormData> = {};
       (result.error.issues ?? []).forEach((error: any) => {
@@ -102,15 +119,7 @@ export default function InventoryCreatePage() {
     }
     setIsLoading(true);
     try {
-      // Convert nulls to undefined for all nullable fields
-      const cleanData = { ...result.data };
-  const nullableFields = ['weight','length','width','height','parcelWeight','parcelLength','parcelWidth','parcelHeight','sellingPrice','costPrice'] as const;
-      nullableFields.forEach(key => {
-        if (cleanData[key] === null) {
-          (cleanData as any)[key] = undefined;
-        }
-      });
-      await inventoryApi.create(cleanData as any);
+      await inventoryApi.create(result.data);
       router.push('/inventory');
     } catch (error) {
       console.error('Failed to create inventory item:', error);
@@ -134,28 +143,6 @@ export default function InventoryCreatePage() {
     };
     flatten(categories);
     return result;
-  };
-
-  const handleAddFeature = () => {
-    if (featureKey.trim() && featureValue.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        features: {
-          ...prev.features,
-          [featureKey.trim()]: featureValue.trim()
-        }
-      }));
-      setFeatureKey('');
-      setFeatureValue('');
-    }
-  };
-
-  const handleRemoveFeature = (key: string) => {
-    setFormData(prev => {
-      const newFeatures = { ...prev.features };
-      delete newFeatures[key];
-      return { ...prev, features: newFeatures };
-    });
   };
 
   if (isLoadingOptions) {
@@ -194,127 +181,85 @@ export default function InventoryCreatePage() {
                 placeholder="e.g., APL-IPH15-BLK"
               />
               <Input
-                label="Product Name *"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                error={errors.name}
-                placeholder="e.g., iPhone 15 Black"
-              />
-              <Input
-                label="Short Name"
-                name="shortName"
-                value={formData.shortName}
-                onChange={handleChange}
-                error={errors.shortName}
-                placeholder="e.g., IP15-BLK"
-              />
-              <Input
-                label="Barcode"
-                name="barcode"
-                value={formData.barcode}
-                onChange={handleChange}
-                error={errors.barcode}
-                placeholder="e.g., 123456789012"
-              />
-              <Input
-                label="Stock Quantity *"
-                name="stock"
+                label="Quantity *"
+                name="quantity"
                 type="number"
                 min="0"
-                value={formData.stock}
+                value={formData.quantity}
                 onChange={handleChange}
-                error={errors.stock ? String(errors.stock) : undefined}
+                error={errors.quantity ? String(errors.quantity) : undefined}
                 placeholder="0"
               />
               <Input
-                label="Currency *"
-                name="currency"
-                value={formData.currency}
-                onChange={handleChange}
-                error={errors.currency}
-                placeholder="USD"
-                maxLength={3}
-              />
-              <Input
-                label="Cost Price"
-                name="costPrice"
+                label="Cost *"
+                name="cost"
                 type="number"
-                step="0.01"
                 min="0"
-                value={formData.costPrice ?? ''}
+                step="0.01"
+                value={formData.cost}
                 onChange={handleChange}
-                error={errors.costPrice ? String(errors.costPrice) : undefined}
+                error={errors.cost ? String(errors.cost) : undefined}
                 placeholder="0.00"
               />
               <Input
-                label="Selling Price *"
-                name="sellingPrice"
+                label="Retail Price *"
+                name="retailPrice"
                 type="number"
-                step="0.01"
                 min="0"
-                value={formData.sellingPrice ?? ''}
+                step="0.01"
+                value={formData.retailPrice}
                 onChange={handleChange}
-                error={errors.sellingPrice ? String(errors.sellingPrice) : undefined}
+                error={errors.retailPrice ? String(errors.retailPrice) : undefined}
                 placeholder="0.00"
               />
               <Input
-                label="Main Image URL"
-                name="mainImage"
-                value={formData.mainImage}
+                label="Oriental Price *"
+                name="orientalPrice"
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.orientalPrice}
                 onChange={handleChange}
-                error={errors.mainImage}
-                placeholder="https://example.com/image.jpg"
+                error={errors.orientalPrice ? String(errors.orientalPrice) : undefined}
+                placeholder="0.00"
               />
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  rows={3}
-                  placeholder="Product description..."
-                />
-              </div>
+              <Input
+                label="Warehouse *"
+                name="warehouse"
+                value={formData.warehouse}
+                onChange={handleChange}
+                error={errors.warehouse}
+                placeholder="Main Warehouse"
+              />
             </div>
           </Card>
           {/* Classifications */}
           <Card>
             <h2 className="text-xl font-semibold text-gray-900 mb-6">Classifications</h2>
             <div className="space-y-4">
-              <SearchableSelect
+              <Select
                 label="Brand *"
                 name="brandId"
-                value={formData.brandId || ''}
-                onChange={(value) => {
-                  setFormData(prev => ({ ...prev, brandId: value }));
-                  if (errors.brandId) setErrors(prev => ({ ...prev, brandId: undefined }));
-                }}
+                value={formData.brandId}
+                onChange={handleChange}
                 options={brands.map(brand => ({ value: brand.id, label: brand.name }))}
                 placeholder="Select brand"
                 error={errors.brandId}
               />
-              <SearchableSelect
+              <Select
                 label="Category *"
                 name="categoryId"
-                value={formData.categoryId || ''}
-                onChange={(value) => {
-                  setFormData(prev => ({ ...prev, categoryId: value }));
-                  if (errors.categoryId) setErrors(prev => ({ ...prev, categoryId: undefined }));
-                }}
+                value={formData.categoryId}
+                onChange={handleChange}
                 options={flattenCategories(categories).map(cat => ({ value: cat.id, label: cat.name }))}
                 placeholder="Select category"
                 error={errors.categoryId}
               />
-              <SearchableSelect
+              <Select
                 label="Product Type *"
                 name="productTypeId"
-                value={formData.productTypeId || ''}
-                onChange={(value) => {
-                  setFormData(prev => ({ ...prev, productTypeId: value }));
-                  if (errors.productTypeId) setErrors(prev => ({ ...prev, productTypeId: undefined }));
-                }}
+                value={formData.productTypeId}
+                onChange={handleChange}
                 options={productTypes.map(pt => ({ value: pt.id, label: pt.name }))}
                 placeholder="Select product type"
                 error={errors.productTypeId}
@@ -322,209 +267,114 @@ export default function InventoryCreatePage() {
             </div>
           </Card>
         </div>
-
-        {/* Package Information */}
+        {/* Additional Details */}
         <Card>
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">Package Information</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <SearchableSelect
-              label="Courier Type"
-              name="courierType"
-              value={formData.courierType || ''}
-              onChange={(value) => setFormData(prev => ({ ...prev, courierType: value as any }))}
-              options={[
-                { value: 'Van', label: 'Van' },
-                { value: 'White Glove', label: 'White Glove' },
-                { value: 'Bulky', label: 'Bulky' }
-              ]}
-              placeholder="Select courier type"
-              error={errors.courierType ? String(errors.courierType) : undefined}
-            />
-            <Input
-              label="Packaging Type"
-              name="packagingType"
-              value={formData.packagingType ?? ''}
-              onChange={handleChange}
-              error={errors.packagingType ?? undefined}
-              placeholder="e.g., Box, Crate, Pallet"
-            />
-            <Input
-              label="Parcel Weight (kg)"
-              name="parcelWeight"
-              type="number"
-              step="0.01"
-              min="0"
-              value={formData.parcelWeight ?? ''}
-              onChange={handleChange}
-              error={errors.parcelWeight ? String(errors.parcelWeight) : undefined}
-              placeholder="0.00"
-            />
-            <Input
-              label="Parcel Length (cm)"
-              name="parcelLength"
-              type="number"
-              step="0.01"
-              min="0"
-              value={formData.parcelLength ?? ''}
-              onChange={handleChange}
-              error={errors.parcelLength ? String(errors.parcelLength) : undefined}
-              placeholder="0.00"
-            />
-            <Input
-              label="Parcel Width (cm)"
-              name="parcelWidth"
-              type="number"
-              step="0.01"
-              min="0"
-              value={formData.parcelWidth ?? ''}
-              onChange={handleChange}
-              error={errors.parcelWidth ? String(errors.parcelWidth) : undefined}
-              placeholder="0.00"
-            />
-            <Input
-              label="Parcel Height (cm)"
-              name="parcelHeight"
-              type="number"
-              step="0.01"
-              min="0"
-              value={formData.parcelHeight ?? ''}
-              onChange={handleChange}
-              error={errors.parcelHeight ? String(errors.parcelHeight) : undefined}
-              placeholder="0.00"
-            />
-            <div className="flex items-end pb-2">
-              <Toggle
-                label="Requires Assembly"
-                checked={formData.assembly || false}
-                onChange={(checked) => setFormData(prev => ({ ...prev, assembly: checked }))}
-                name="assembly"
-              />
-            </div>
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Packaging Details</label>
-              <textarea
-                name="packagingDetail"
-                value={formData.packagingDetail}
+          <h2 className="text-xl font-semibold text-gray-900 mb-6">Additional Details</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <Input
+                label="Weight (kg)"
+                name="weight"
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.weight || ''}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                rows={3}
-                placeholder="Additional packaging information..."
-              />
-            </div>
-          </div>
-        </Card>
-
-        {/* Product Information - Product Dimensions & Weight */}
-        <Card>
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">Product Information</h2>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Input
-              label="Product Weight (kg)"
-              name="weight"
-              type="number"
-              step="0.01"
-              min="0"
-              value={formData.weight ?? ''}
-              onChange={handleChange}
-              error={errors.weight ? String(errors.weight) : undefined}
-              placeholder="0.00"
-            />
-            <Input
-              label="Product Length (cm)"
-              name="length"
-              type="number"
-              step="0.01"
-              min="0"
-              value={formData.length ?? ''}
-              onChange={handleChange}
-              error={errors.length ? String(errors.length) : undefined}
-              placeholder="0.00"
-            />
-            <Input
-              label="Product Width (cm)"
-              name="width"
-              type="number"
-              step="0.01"
-              min="0"
-              value={formData.width ?? ''}
-              onChange={handleChange}
-              error={errors.width ? String(errors.width) : undefined}
-              placeholder="0.00"
-            />
-            <Input
-              label="Product Height (cm)"
-              name="height"
-              type="number"
-              step="0.01"
-              min="0"
-              value={formData.height ?? ''}
-              onChange={handleChange}
-              error={errors.height ? String(errors.height) : undefined}
-              placeholder="0.00"
-            />
-          </div>
-        </Card>
-
-        {/* Features */}
-        <Card>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">Features</h2>
-            <Button
-              type="button"
-              size="sm"
-              onClick={handleAddFeature}
-              className="flex items-center space-x-2"
-              disabled={!featureKey || !featureValue}
-            >
-              <Plus className="h-4 w-4" />
-              <span>Add Feature</span>
-            </Button>
-          </div>
-
-          <div className="space-y-4">
-            {/* Add New Feature Inputs */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Input
-                label="Feature Type"
-                value={featureKey}
-                onChange={(e) => setFeatureKey(e.target.value)}
-                placeholder="e.g., Warranty, Color, Size"
+                placeholder="0.00"
+                helperText="Optional weight in kilograms"
               />
               <Input
-                label="Feature Value"
-                value={featureValue}
-                onChange={(e) => setFeatureValue(e.target.value)}
-                placeholder="e.g., 2 years, Black, Large"
+                label="Courier"
+                name="courier"
+                value={formData.courier || ''}
+                onChange={handleChange}
+                placeholder="DHL, FedEx, etc."
+                helperText="Preferred shipping courier"
               />
-            </div>
-
-            {/* Display Features List */}
-            {formData.features && Object.keys(formData.features).length > 0 && (
-              <div className="mt-4">
-                <h3 className="text-sm font-medium text-gray-700 mb-3">Added Features</h3>
-                <div className="space-y-2">
-                  {Object.entries(formData.features).map(([key, value]) => (
-                    <div key={key} className="flex items-center justify-between bg-gray-50 px-4 py-3 rounded-md border border-gray-200">
-                      <div className="flex items-center space-x-3">
-                        <span className="text-sm font-semibold text-gray-700">{key}:</span>
-                        <span className="text-sm text-gray-900">{String(value)}</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveFeature(key)}
-                        className="text-red-600 hover:text-red-800 p-1"
-                        title="Remove feature"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="assembly"
+                  name="assembly"
+                  checked={formData.assembly}
+                  onChange={handleChange}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <label htmlFor="assembly" className="text-sm font-medium text-gray-700">
+                  Requires Assembly
+                </label>
               </div>
-            )}
+            </div>
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="dimensionsEnabled"
+                  checked={formData.dimensionsEnabled}
+                  onChange={(e) => setFormData(prev => ({ 
+                    ...prev, 
+                    dimensionsEnabled: e.target.checked,
+                    dimensions: e.target.checked ? { length: 0, width: 0, height: 0 } : undefined
+                  }))}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <label htmlFor="dimensionsEnabled" className="text-sm font-medium text-gray-700">
+                  Include Dimensions
+                </label>
+              </div>
+              {formData.dimensionsEnabled && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Dimensions (cm)</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <Input
+                      placeholder="Length"
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={formData.dimensions?.length || ''}
+                      onChange={(e) => handleDimensionChange('length', e.target.value)}
+                    />
+                    <Input
+                      placeholder="Width"
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={formData.dimensions?.width || ''}
+                      onChange={(e) => handleDimensionChange('width', e.target.value)}
+                    />
+                    <Input
+                      placeholder="Height"
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={formData.dimensions?.height || ''}
+                      onChange={(e) => handleDimensionChange('height', e.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </Card>
-
+        {/* Dynamic Features */}
+        <Card>
+          <h2 className="text-xl font-semibold text-gray-900 mb-6">Dynamic Features</h2>
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">
+              Features (JSON Format)
+            </label>
+            <textarea
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              rows={6}
+              value={formData.dynamicFeaturesJson}
+              onChange={(e) => handleDynamicFeaturesChange(e.target.value)}
+              placeholder='{"color": "Black", "storage": "128GB", "connectivity": "WiFi"}'
+            />
+            <p className="text-sm text-gray-500">
+              Enter product features as JSON key-value pairs. Example: "color": "Black", "storage": "128GB"
+            </p>
+          </div>
+        </Card>
         {/* Actions */}
         <div className="flex items-center justify-end space-x-4">
           <Button variant="outline" onClick={() => router.push('/inventory')}>Cancel</Button>

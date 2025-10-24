@@ -1,16 +1,16 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Upload, Trash2 } from "lucide-react";
+import { Plus, Search, Filter, Upload, Package, Calendar, TrendingUp, Trash2 } from "lucide-react";
 import { batchesApi, jobsApi } from "@/services/api";
 import { Batch, PaginatedResponse, FilterOptions } from "@/types";
 import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Card } from "@/components/ui/Card";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { ActionMenu } from "@/components/ui/ActionMenu";
 import { ImportExportModal } from "@/components/ImportExportModal";
-import { SearchFilterBar } from "@/components/SearchFilterBar";
 
 export default function BatchesPage() {
   const router = useRouter();
@@ -33,7 +33,6 @@ export default function BatchesPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isImportExportOpen, setIsImportExportOpen] = useState(false);
-  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     loadBatches();
@@ -58,6 +57,13 @@ export default function BatchesPage() {
       [key]: value,
       page: key !== 'page' ? 1 : value
     }));
+  };
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setTimeout(() => {
+      handleFilterChange('search', value || undefined);
+    }, 300);
   };
 
   const formatCurrency = (amount: number) => {
@@ -160,117 +166,95 @@ export default function BatchesPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Batches Management</h1>
-          <p className="text-gray-600 mt-2">Manage inventory batches and shipments</p>
-        </div>
-        <div className="flex items-center space-x-3">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsImportExportOpen(true)}
-            className="flex items-center space-x-2"
-          >
-            <Upload className="h-4 w-4" />
-            <span>Import/Export</span>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold flex items-center gap-2">
+          <Package className="w-6 h-6" /> Batches
+        </h1>
+        <div className="flex gap-2">
+          <Button onClick={() => setIsImportExportOpen(true)} variant="outline" size="sm">
+            <Upload className="w-4 h-4 mr-1" /> Import/Export
           </Button>
-          <Button
-            size="sm"
-            onClick={() => router.push('/batches/create')}
-            className="flex items-center space-x-2"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Add Batch</span>
+          <Button onClick={() => router.push('/batches/create')} size="sm">
+            <Plus className="w-4 h-4 mr-1" /> New Batch
           </Button>
         </div>
       </div>
 
-      {/* Search & Filters */}
-      <SearchFilterBar
-        searchPlaceholder="Search by container number..."
-        onSearchChange={(value) => {
-          if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
-          searchTimeoutRef.current = setTimeout(() => {
-            handleFilterChange('search', value);
-          }, 300);
-        }}
-        showFilters={showFilters}
-        onToggleFilters={() => setShowFilters(f => !f)}
-        hasFilters={true}
-        filterContent={
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Select
-              label="Sort By"
-              value={filters.sortBy}
-              onChange={e => handleFilterChange('sortBy', e.target.value)}
-              options={[
-                { value: 'createdAt', label: 'Created At' },
-                { value: 'eta', label: 'ETA' },
-                { value: 'arrivalDate', label: 'Arrival Date' },
-              ]}
-            />
-            <Select
-              label="Order"
-              value={filters.sortOrder}
-              onChange={e => handleFilterChange('sortOrder', e.target.value)}
-              options={[
-                { value: 'desc', label: 'Descending' },
-                { value: 'asc', label: 'Ascending' },
-              ]}
-            />
-          </div>
-        }
-      />
+      <div className="flex flex-wrap gap-2 items-center">
+        <Input
+          className="w-64"
+          placeholder="Search by container number..."
+          onChange={handleSearch}
+        />
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setShowFilters(f => !f)}
+        >
+          <Filter className="w-4 h-4 mr-1" /> Filters
+        </Button>
+      </div>
 
-      <Card padding="none">
+      {showFilters && (
+        <Card className="p-4 flex flex-wrap gap-4 items-center">
+          <Select
+            label="Sort By"
+            value={filters.sortBy}
+            onChange={e => handleFilterChange('sortBy', e.target.value)}
+            options={[
+              { value: 'createdAt', label: 'Created At' },
+              { value: 'eta', label: 'ETA' },
+              { value: 'arrivalDate', label: 'Arrival Date' },
+            ]}
+          />
+          <Select
+            label="Order"
+            value={filters.sortOrder}
+            onChange={e => handleFilterChange('sortOrder', e.target.value)}
+            options={[
+              { value: 'desc', label: 'Descending' },
+              { value: 'asc', label: 'Ascending' },
+            ]}
+          />
+        </Card>
+      )}
+
+      <Card className="overflow-x-auto">
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
+          <div className="flex justify-center py-12">
             <LoadingSpinner size="lg" />
           </div>
-        ) : batches.data.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="text-gray-400 text-6xl mb-4">📦</div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {filters.search ? 'No batches found' : 'No batches yet'}
-            </h3>
-            <p className="text-gray-600 mb-4">
-              {filters.search
-                ? 'Try adjusting your search terms or filters'
-                : 'Get started by creating your first batch.'
-              }
-            </p>
-            {!filters.search && (
-              <Button onClick={() => router.push('/batches/create')}>Create First Batch</Button>
-            )}
-          </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+          <table className="min-w-full text-sm">
+            <thead>
+              <tr className="border-b">
+                <th className="px-3 py-2 text-left">Container #</th>
+                <th className="px-3 py-2 text-left">ETA</th>
+                <th className="px-3 py-2 text-left">Arrival</th>
+                <th className="px-3 py-2 text-left">Status</th>
+                <th className="px-3 py-2 text-left">Total Value</th>
+                <th className="px-3 py-2 text-left">Created</th>
+                <th className="px-3 py-2 text-left">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {batches.data.length === 0 ? (
                 <tr>
-                  <th className="px-6 py-4 text-left font-medium text-gray-900">Container #</th>
-                  <th className="px-6 py-4 text-left font-medium text-gray-900">ETA</th>
-                  <th className="px-6 py-4 text-left font-medium text-gray-900">Arrival</th>
-                  <th className="px-6 py-4 text-left font-medium text-gray-900">Status</th>
-                  <th className="px-6 py-4 text-left font-medium text-gray-900">Total Value</th>
-                  <th className="px-6 py-4 text-left font-medium text-gray-900">Created</th>
-                  <th className="px-6 py-4 text-center font-medium text-gray-900">Actions</th>
+                  <td colSpan={7} className="text-center py-8 text-gray-500">No batches found.</td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {batches.data.map(batch => (
-                  <tr key={batch.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 font-mono text-gray-900">{batch.containerNumber}</td>
-                    <td className="px-6 py-4 text-gray-500 text-sm">{batch.eta ? formatDate(batch.eta) : '-'}</td>
-                    <td className="px-6 py-4 text-gray-500 text-sm">{batch.arrivalDate ? formatDate(batch.arrivalDate) : '-'}</td>
-                    <td className="px-6 py-4">
+              ) : (
+                batches.data.map(batch => (
+                  <tr key={batch.id} className="border-b hover:bg-gray-50">
+                    <td className="px-3 py-2 font-mono">{batch.containerNumber}</td>
+                    <td className="px-3 py-2">{batch.eta ? formatDate(batch.eta) : '-'}</td>
+                    <td className="px-3 py-2">{batch.arrivalDate ? formatDate(batch.arrivalDate) : '-'}</td>
+                    <td className="px-3 py-2">
                       <span className={`px-2 py-1 rounded text-xs font-semibold ${getStatusColor(batch.status)}`}>{getStatusLabel(batch.status)}</span>
                     </td>
-                    <td className="px-6 py-4 text-gray-900">{formatCurrency((batch as any).totalValue || 0)}</td>
-                    <td className="px-6 py-4 text-gray-500 text-sm">{formatDate(batch.createdAt)}</td>
-                    <td className="px-6 py-4 text-center">
+                    <td className="px-3 py-2">{formatCurrency((batch as any).totalValue || 0)}</td>
+                    <td className="px-3 py-2">{formatDate(batch.createdAt)}</td>
+                    <td className="px-3 py-2">
                       <ActionMenu
                         onView={() => handleView(batch.id)}
                         onEdit={() => handleEdit(batch.id)}
@@ -279,10 +263,10 @@ export default function BatchesPage() {
                       />
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                ))
+              )}
+            </tbody>
+          </table>
         )}
       </Card>
 

@@ -18,33 +18,32 @@ interface BrandModalProps {
 export function BrandModal({ isOpen, onClose, onSave, brand, mode }: BrandModalProps) {
   const [formData, setFormData] = useState<BrandFormData>({
     name: '',
-    visible: 1,
-    flag: 0
+    description: '',
+    image: ''
   });
-  const [errors, setErrors] = useState<Partial<Record<keyof BrandFormData, string>>>({});
+  const [errors, setErrors] = useState<Partial<BrandFormData>>({});
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (brand) {
       setFormData({
         name: brand.name,
-        visible: brand.visible ?? 1,
-        flag: brand.flag ?? 0
+        description: brand.description || '',
+        image: brand.image || ''
       });
     } else {
       setFormData({
         name: '',
-        visible: 1,
-        flag: 0
+        description: '',
+        image: ''
       });
     }
     setErrors({});
   }, [brand, isOpen]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
-    const finalValue = type === 'checkbox' ? (e.target as HTMLInputElement).checked ? 1 : 0 : value;
-    setFormData(prev => ({ ...prev, [name]: finalValue }));
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
     if (errors[name as keyof BrandFormData]) {
       setErrors(prev => ({ ...prev, [name]: undefined }));
     }
@@ -55,7 +54,7 @@ export function BrandModal({ isOpen, onClose, onSave, brand, mode }: BrandModalP
     if (mode === 'view') return;
     const result = brandSchema.safeParse(formData);
     if (!result.success) {
-      const fieldErrors: Partial<Record<keyof BrandFormData, string>> = {};
+      const fieldErrors: Partial<BrandFormData> = {};
       result.error.issues.forEach((error) => {
         if (typeof error.path[0] === 'string' || typeof error.path[0] === 'number') {
           fieldErrors[error.path[0] as keyof BrandFormData] = error.message;
@@ -94,32 +93,22 @@ export function BrandModal({ isOpen, onClose, onSave, brand, mode }: BrandModalP
           disabled={mode === 'view'}
           required
         />
-        <div className="space-y-2">
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              name="visible"
-              checked={formData.visible === 1}
-              onChange={(e) => setFormData(prev => ({ ...prev, visible: e.target.checked ? 1 : 0 }))}
-              disabled={mode === 'view'}
-              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-            />
-            <span className="text-sm font-medium text-gray-700">Visible</span>
-          </label>
-        </div>
-        <div className="space-y-2">
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              name="flag"
-              checked={formData.flag === 1}
-              onChange={(e) => setFormData(prev => ({ ...prev, flag: e.target.checked ? 1 : 0 }))}
-              disabled={mode === 'view'}
-              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-            />
-            <span className="text-sm font-medium text-gray-700">Flag for attention</span>
-          </label>
-        </div>
+        <Input
+          label="Description"
+          name="description"
+          value={formData.description}
+          onChange={handleChange}
+          error={errors.description}
+          disabled={mode === 'view'}
+        />
+        <Input
+          label="Image URL"
+          name="image"
+          value={formData.image}
+          onChange={handleChange}
+          error={errors.image}
+          disabled={mode === 'view'}
+        />
         <div className="flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={onClose}>
             Cancel

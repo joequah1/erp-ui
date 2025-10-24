@@ -1,14 +1,14 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { Upload, Plus, Search, Filter } from 'lucide-react';
-import { InventoryItem, PaginatedResponse, FilterOptions, Brand, Category, ProductType } from '@/types';
-import { inventoryApi, brandsApi, categoriesApi, productTypesApi } from '@/services/api';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Select } from '@/components/ui/Select';
-import { Card } from '@/components/ui/Card';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { ActionMenu } from '@/components/ui/ActionMenu';
+import { InventoryItem, PaginatedResponse, FilterOptions, Brand, Category, ProductType } from '../../../types';
+import { inventoryApi, brandsApi, categoriesApi, productTypesApi } from '../../../services/api';
+import { Button } from '../../../components/ui/Button';
+import { Input } from '../../../components/ui/Input';
+import { Select } from '../../../components/ui/Select';
+import { Card } from '../../../components/ui/Card';
+import { LoadingSpinner } from '../../../components/ui/LoadingSpinner';
+import { ActionMenu } from '../../../components/ui/ActionMenu';
 import { useRouter } from 'next/navigation';
 
 export default function InventoryListPage() {
@@ -265,18 +265,18 @@ export default function InventoryListPage() {
                       <td className="py-4 px-6 text-gray-900">{item.category?.name || 'N/A'}</td>
                       <td className="py-4 px-6 text-right">
                         <span className={`font-medium ${
-                          item.stock === 0 
+                          item.quantity === 0 
                             ? 'text-red-600' 
-                            : item.stock < 10 
+                            : item.quantity < 10 
                             ? 'text-orange-600' 
                             : 'text-green-600'
                         }`}>
-                          {item.stock}
+                          {item.quantity}
                         </span>
                       </td>
-                      <td className="py-4 px-6 text-right font-medium">{formatCurrency(item.costPrice ?? 0)}</td>
-                      <td className="py-4 px-6 text-right font-medium">{formatCurrency(item.sellingPrice)}</td>
-                      <td className="py-4 px-6 text-gray-900">{item.name}</td>
+                      <td className="py-4 px-6 text-right font-medium">{formatCurrency(item.cost)}</td>
+                      <td className="py-4 px-6 text-right font-medium">{formatCurrency(item.retailPrice)}</td>
+                      <td className="py-4 px-6 text-gray-900">{item.warehouse}</td>
                       <td className="py-4 px-6 text-center">
                         <ActionMenu
                           onView={() => handleView(item.id)}

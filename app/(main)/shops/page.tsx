@@ -153,7 +153,7 @@ export default function Page() {
             <Upload className="h-4 w-4" />
             <span>Import/Export</span>
           </Button>
-          <Button size="sm" onClick={handleCreate} className="flex items-center space-x-2" type="button">
+          <Button onClick={handleCreate} className="flex items-center space-x-2" type="button">
             <Plus className="h-4 w-4" />
             <span>Create Shop</span>
           </Button>

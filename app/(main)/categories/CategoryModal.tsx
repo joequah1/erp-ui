@@ -20,7 +20,8 @@ interface CategoryModalProps {
 export function CategoryModal({ isOpen, onClose, onSave, category, mode, categories }: CategoryModalProps) {
   const [formData, setFormData] = useState<CategoryFormData>({
     name: '',
-    parentId: ''
+    parentId: '',
+    description: ''
   });
   const [errors, setErrors] = useState<Partial<CategoryFormData>>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -29,12 +30,14 @@ export function CategoryModal({ isOpen, onClose, onSave, category, mode, categor
     if (category) {
       setFormData({
         name: category.name || '',
-        parentId: category.parentId || ''
+        parentId: category.parentId || '',
+        description: category.description || ''
       });
     } else {
       setFormData({
         name: '',
-        parentId: ''
+        parentId: '',
+        description: ''
       });
     }
     setErrors({});
@@ -102,6 +105,14 @@ export function CategoryModal({ isOpen, onClose, onSave, category, mode, categor
           onChange={handleChange}
           options={categories.filter(c => !category || c.id !== category.id).map(c => ({ value: c.id, label: c.name }))}
           error={errors.parentId}
+          disabled={mode === 'view'}
+        />
+        <Input
+          label="Description"
+          name="description"
+          value={formData.description}
+          onChange={handleChange}
+          error={errors.description}
           disabled={mode === 'view'}
         />
         <div className="flex justify-end gap-2">

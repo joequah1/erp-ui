@@ -1,38 +1,25 @@
 "use client";
-import { useState, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Eye, EyeOff, Package, AlertCircle } from "lucide-react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Eye, EyeOff, Package } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
 import { loginSchema, type LoginFormData } from "@/validation/schemas";
 
-function LoginForm() {
+export default function LoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState<LoginFormData>({ email: "", password: "" });
   const [errors, setErrors] = useState<Partial<LoginFormData>>({});
-  const [globalError, setGlobalError] = useState<string | null>(null);
-
-  useEffect(() => {
-    // Check for unauthorized error in URL
-    const error = searchParams.get('error');
-    if (error === 'unauthorized') {
-      setGlobalError('Your session has expired. Please login again.');
-    }
-  }, [searchParams]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name as keyof LoginFormData]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
-    }
-    if (globalError) {
-      setGlobalError(null);
     }
   };
 
@@ -51,17 +38,9 @@ function LoginForm() {
     }
     try {
       await login(formData);
-
-      // Check if there was a redirect URL saved
-      const redirectUrl = sessionStorage.getItem('redirectAfterLogin');
-      if (redirectUrl) {
-        sessionStorage.removeItem('redirectAfterLogin');
-        router.push(redirectUrl);
-      } else {
-        router.push("/inventory");
-      }
+      router.push("/inventory");
     } catch (error: any) {
-      setGlobalError(error?.message || "Login failed");
+      setErrors({ email: error?.message || "Login failed" });
     }
   };
 
@@ -77,16 +56,6 @@ function LoginForm() {
           <h1 className="text-2xl font-bold text-gray-900">Welcome Back</h1>
           <p className="text-gray-600 mt-2">Sign in to your InventoryPro account</p>
         </div>
-
-        {globalError && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <p className="text-sm text-red-800">{globalError}</p>
-            </div>
-          </div>
-        )}
-
         <form onSubmit={handleSubmit} className="space-y-6">
           <Input
             label="Email Address"
@@ -161,13 +130,5 @@ function LoginForm() {
         </div>
       </Card>
     </div>
-  );
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">Loading...</div>}>
-      <LoginForm />
-    </Suspense>
   );
 }

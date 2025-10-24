@@ -266,11 +266,11 @@ export const authApi = {
 
   async register(data: RegisterData): Promise<{ user: User; token: string }> {
     await delay(1000);
-
+    
     if (mockUsers.find(u => u.email === data.email)) {
       throw new Error('Email already exists');
     }
-
+    
     const user: User = {
       id: Date.now().toString(),
       email: data.email,
@@ -279,9 +279,9 @@ export const authApi = {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
-
+    
     mockUsers.push(user);
-
+    
     return {
       user,
       token: 'mock-jwt-token-' + Date.now()

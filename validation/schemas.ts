@@ -38,7 +38,7 @@ export const categorySchema = z.object({
 export const productTypeSchema = z.object({
   name: z.string().min(2, 'Product type name must be at least 2 characters'),
   description: z.string().optional(),
-  attributes: z.record(z.string(), z.any()).optional().default({})
+  attributes: z.record(z.string(), z.any()).default({})
 });
 
 // Inventory Item schema
@@ -59,8 +59,8 @@ export const inventoryItemSchema = z.object({
     height: z.number().min(0)
   }).optional(),
   courier: z.string().optional(),
-  assembly: z.boolean().optional().default(false),
-  dynamicFeatures: z.record(z.string(), z.any()).optional().default({})
+  assembly: z.boolean().default(false),
+  dynamicFeatures: z.record(z.string(), z.any()).default({})
 });
 
 // Type exports for TypeScript

@@ -85,9 +85,7 @@ export function RoleModal({ isOpen, onClose, onSave, role, mode, permissions }: 
     }
     setIsLoading(true);
     try {
-      // Transform permission IDs to Permission objects
       const selectedPermissions = permissions.filter(p => result.data.permissions.includes(p.id));
-
       const roleData = {
         name: result.data.name,
         description: result.data.description,
